@@ -696,3 +696,25 @@ button#checkBtn:active {
   justify-content: center;
   margin-top: 14px;
 }
+/* Leyenda debajo de la foto: más contraste, legible sobre fondo oscuro */
+.photo-legend {
+  font-family: 'Brush Script MT', 'Segoe Script', 'URW Chancery L', cursive;
+  font-size: clamp(16px, 1.6vw, 22px); /* ↑ un toque más grande */
+  color: #f4e7ef; /* claro para buen contraste */
+  letter-spacing: 0.3px;
+  text-align: center;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35), 0 2px 10px rgba(0, 0, 0, 0.25);
+  margin-top: 10px;
+}
+
+/* Corazón separador: más grande, 100% visible y con sombra para contraste */
+.photo-section::after {
+  content: '❤';
+  display: block;
+  text-align: center;
+  font-size: clamp(26px, 3vw, 36px); /* ↑ tamaño */
+  color: var(--accent);
+  opacity: 1; /* antes 0.6 */
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35); /* halo para legibilidad */
+  margin: calc(var(--space) * 0.8) auto 0;
+}
