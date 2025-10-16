@@ -30,6 +30,14 @@ const LS_KEYS = {
   GRID_STYLE: 'love-crossword.style',
   THEME: 'ui.theme',
 };
+const SHARE_FILENAME = 'nosotros.png';
+const SHARE_CANVAS_SELECTOR = '#shareCanvas';
+const NAV_KEY_DELTAS = {
+  ArrowUp: [-1, 0],
+  ArrowDown: [1, 0],
+  ArrowLeft: [0, -1],
+  ArrowRight: [0, 1],
+};
 
 /* =========================
  * Sonidos: WebAudio (sin archivos)
@@ -116,6 +124,27 @@ const storageSet = (k, v) => {
     localStorage.setItem(k, v);
   } catch {}
 };
+
+// Reusable helpers to avoid selector duplication
+function inputAt(r, c) {
+  return qs(`input[data-pos='${toPosKey(r, c)}']`);
+}
+function cellAt(r, c) {
+  return qs(`#crosswordGrid .cell[aria-rowindex='${r}'][aria-colindex='${c}']`);
+}
+function focusInputAt(r, c) {
+  const el = inputAt(r, c);
+  if (el) el.focus();
+}
+function downloadCanvasPng(canvas, filename) {
+  const a = document.createElement('a');
+  a.download = filename;
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+}
+function getShareCanvas() {
+  return qs(SHARE_CANVAS_SELECTOR);
+}
 
 function normalizeForCompare(str) {
   return str
@@ -333,7 +362,7 @@ function onGridInput(e) {
 
   const r = Number(input.dataset.row);
   const c = Number(input.dataset.col);
-  const next = qs(`input[data-pos='${toPosKey(r, c + 1)}']`);
+  const next = inputAt(r, c + 1);
   if (next) next.focus();
 
   validateSingleWordAtRow(r, /*quiet*/ true);
@@ -346,17 +375,11 @@ function onGridKeydown(e) {
   const r = Number(input.dataset.row);
   const c = Number(input.dataset.col);
 
-  const nav = {
-    ArrowUp: [r - 1, c],
-    ArrowDown: [r + 1, c],
-    ArrowLeft: [r, c - 1],
-    ArrowRight: [r, c + 1],
-  }[e.key];
+  const nav = NAV_KEY_DELTAS[e.key];
 
   if (nav) {
     e.preventDefault();
-    const el = qs(`input[data-pos='${toPosKey(nav[0], nav[1])}']`);
-    if (el) el.focus();
+    focusInputAt(r + nav[0], c + nav[1]);
   }
 }
 
@@ -369,7 +392,7 @@ function handleSyllableClick(button, syll) {
   if (!active || active.tagName !== 'INPUT') return;
   let [r, c] = active.dataset.pos.split(',').map(Number);
   for (const ch of syll) {
-    const t = qs(`input[data-pos='${toPosKey(r, c)}']`);
+    const t = inputAt(r, c);
     if (!t) break;
     t.value = ch.toUpperCase();
     c++;
@@ -383,14 +406,13 @@ function handleSyllableClick(button, syll) {
  * ========================= */
 function wordFilled(w) {
   for (let j = 0; j < w.answer.length; j++) {
-    const inp = qs(`input[data-pos='${toPosKey(w.row, w.col + j)}']`);
+    const inp = inputAt(w.row, w.col + j);
     if (!inp?.value) return false;
   }
   return true;
 }
 function focusFirstCellOfWord(w) {
-  const first = qs(`input[data-pos='${toPosKey(w.row, w.col)}']`);
-  first?.focus();
+  focusInputAt(w.row, w.col);
 }
 
 function validateSingleWordAtRow(row, quiet = false) {
@@ -398,7 +420,7 @@ function validateSingleWordAtRow(row, quiet = false) {
   if (!w) return false;
 
   for (let j = 0; j < w.answer.length; j++) {
-    const cell = qs(`#crosswordGrid .cell[aria-rowindex='${row}'][aria-colindex='${w.col + j}']`);
+    const cell = cellAt(row, w.col + j);
     cell?.classList.remove('good', 'bad', 'empty-hint');
   }
 
@@ -407,7 +429,7 @@ function validateSingleWordAtRow(row, quiet = false) {
   let allGood = true;
 
   for (let j = 0; j < expected.length; j++) {
-    const inp = qs(`input[data-pos='${toPosKey(row, w.col + j)}']`);
+    const inp = inputAt(row, w.col + j);
     const cell = inp?.parentElement;
     const val = (inp?.value || '').toUpperCase();
 
@@ -492,7 +514,7 @@ function markSyllablesForCorrectWord(wordIdx) {
 
 function flashRow(row) {
   for (let c = 1; c <= GRID_COLS; c++) {
-    const box = qs(`#crosswordGrid .cell[aria-rowindex='${row}'][aria-colindex='${c}']`);
+    const box = cellAt(row, c);
     if (box) {
       box.classList.add('row-ok');
       setTimeout(() => box.classList.remove('row-ok'), 950);
@@ -735,17 +757,16 @@ function initStaticEvents() {
   });
 
   qs('#downloadCard')?.addEventListener('click', () => {
-    const link = document.createElement('a');
-    link.download = 'nosotros.png';
-    link.href = qs('#shareCanvas').toDataURL('image/png');
-    link.click();
+    const canvas = getShareCanvas();
+    if (canvas) downloadCanvasPng(canvas, SHARE_FILENAME);
   });
 
   qs('#shareCard')?.addEventListener('click', async () => {
-    const canvas = qs('#shareCanvas');
+    const canvas = getShareCanvas();
+    if (!canvas) return;
     const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
     if (navigator.canShare && blob) {
-      const file = new File([blob], 'nosotros.png', { type: 'image/png' });
+      const file = new File([blob], SHARE_FILENAME, { type: 'image/png' });
       try {
         await navigator.share({
           files: [file],
@@ -754,10 +775,7 @@ function initStaticEvents() {
         });
       } catch {}
     } else {
-      const a = document.createElement('a');
-      a.download = 'nosotros.png';
-      a.href = canvas.toDataURL('image/png');
-      a.click();
+      downloadCanvasPng(canvas, SHARE_FILENAME);
     }
   });
 
