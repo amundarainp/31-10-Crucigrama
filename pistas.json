@@ -1,13 +1,28 @@
 {
   "words": [
-    { "answer": "SONRISA", "hint": "Curva que endulza mi vida." },
-    { "answer": "AMOR", "hint": "Sentimiento que nos une / La base de nuestra relación." },
-    { "answer": "SEÑOR", "hint": "Primer fin de semana juntos, en Capilla del ......" },
-    { "answer": "BESO", "hint": "Voy a hacer algo distinto me dijiste, y me diste el primero" },
+    { "answer": "SONRISA", "hint": "Gesto que alegra mi alma." },
+    {
+      "answer": "AMOR",
+      "hint": "Sentimiento que nos une / La base de nuestra relación."
+    },
+    {
+      "answer": "SEÑOR",
+      "hint": "Primer fin de semana juntos, en Capilla del ......"
+    },
+    {
+      "answer": "BESO",
+      "hint": "Voy a hacer algo distinto me dijiste, y me diste el primero"
+    },
     { "answer": "TOMADA", "hint": "La primer salida fue en Casa ......" },
-    { "answer": "FRANK", "hint": "Nuestro varietal preferido es Cabernet ....." },
+    {
+      "answer": "FRANK",
+      "hint": "Nuestro varietal preferido es Cabernet ....."
+    },
     { "answer": "ABRAZOS", "hint": "Nos abriga cuando hace frío" },
-    { "answer": "PASIÓN", "hint": "Fuego que nos hace sentir más vivos el uno por el otro" }
+    {
+      "answer": "PASIÓN",
+      "hint": "Fuego que nos hace sentir más vivos el uno por el otro"
+    }
   ],
   "syllables": [
     ["SON", "RI", "SA"],
