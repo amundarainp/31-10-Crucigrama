@@ -257,6 +257,26 @@ button:focus-visible {
   font-weight: 700;
   line-height: 1.25;
 }
+.toast .meta {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.2px;
+}
+.toast .meta .heart {
+  color: var(--accent);
+  margin-left: 4px;
+  display: inline-block;
+  animation: heartBeat 1.8s ease-in-out infinite;
+  transform-origin: center;
+}
+@keyframes heartBeat {
+  0%, 20%, 100% { transform: scale(1); }
+  10% { transform: scale(1.18); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast .meta .heart { animation: none; }
+}
 .toast .actions { display: flex; gap: 8px; margin-top: 6px; }
 .toast .actions button { padding: 6px 10px; font-weight: 700; }
 /* No se fijan en pantalla; guardado descarga archivo */
@@ -691,9 +711,14 @@ input[type="checkbox"].switch-input {
 }
 /* ==================== Footer ==================== */
 footer {
-  color: var(--muted);
+  color: var(--text);
   text-align: center;
   margin-top: var(--space);
+  font-weight: 700;
+  background: var(--surface-veil);
+  padding: 10px 12px;
+  border-radius: 10px;
+  box-shadow: var(--shadow);
 }
 @media (min-width: 1280px) {
   :root:not(.compact) {

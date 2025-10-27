@@ -718,11 +718,20 @@ function openQrModal() {
   const url = getShareUrl();
   const inp = qs("#qrUrlInput");
   if (inp) inp.value = url;
-  const img = document.createElement("img");
-  img.alt = "QR";
-  img.width = 240; img.height = 240;
-  img.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(url)}`;
-  c.appendChild(img);
+  if (window.QRCode && typeof window.QRCode === "function") {
+    // Generación local
+    const holder = document.createElement("div");
+    c.appendChild(holder);
+    // @ts-ignore
+    new window.QRCode(holder, { text: url, width: 240, height: 240 });
+  } else {
+    // Fallback externo
+    const img = document.createElement("img");
+    img.alt = "QR";
+    img.width = 240; img.height = 240;
+    img.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(url)}`;
+    c.appendChild(img);
+  }
   const modal = qs("#qrModal");
   modal?.classList.add("show");
 }
@@ -732,9 +741,13 @@ function getShareUrl() {
   return saved || window.location.href;
 }
 function downloadQrImage() {
-  const img = qs("#qrContainer img");
-  if (!img) return;
-  // Dibuja en canvas para poder descargar
+  const node = qs("#qrContainer canvas, #qrContainer img");
+  if (!node) return;
+  if (node.tagName === "CANVAS") {
+    downloadCanvasPng(node, "qr-crucigrama.png");
+    return;
+  }
+  const img = node;
   const canvas = document.createElement("canvas");
   canvas.width = img.naturalWidth || 240;
   canvas.height = img.naturalHeight || 240;
@@ -776,6 +789,10 @@ function createToastElement(data) {
   text.className = "note";
   text.textContent = note && String(note).trim() ? note : `¡Correcto: ${answer}!`;
   wrap.appendChild(text);
+  const meta = document.createElement("div");
+  meta.className = "meta";
+  meta.innerHTML = `Primer aniversario • ${getShareYear()} <span class="heart" aria-hidden="true">❤</span>`;
+  wrap.appendChild(meta);
   const actions = document.createElement("div");
   actions.className = "actions";
   const saveBtn = document.createElement("button");
@@ -1057,7 +1074,7 @@ async function generateAndDownloadNoteCard({ answer, note, photo }) {
   if (line) ctx.fillText(line, textX, y);
 
   // Fecha abajo a la derecha
-  const date = formatLongDate(new Date());
+  const date = SHARE_CARD_COPY.footerText || formatLongDate(new Date());
   ctx.font = "500 16px Georgia, Times, serif";
   ctx.fillStyle = "#475569";
   const wdate = ctx.measureText(date).width;
@@ -1075,6 +1092,13 @@ function getEmojiForAnswer(answer) {
 function formatLongDate(d) {
   const months = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
   return `${d.getDate()} de ${months[d.getMonth()]} de ${d.getFullYear()}`;
+}
+
+function getShareYear() {
+  const fixed = SHARE_CARD_COPY?.footerText || "";
+  const m = String(fixed).match(/(\d{4})/);
+  if (m) return m[1];
+  return String(new Date().getFullYear());
 }
 
 /* =========================
