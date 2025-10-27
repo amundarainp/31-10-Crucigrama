@@ -18,7 +18,7 @@
       "answer": "FRANK",
       "hint": "Nuestro varietal preferido es Cabernet ....."
     },
-    { "answer": "ABRAZOS", "hint": "Nos abriga cuando hace frío" },
+    { "answer": "ES POR A CÁ", "hint": "Por dónde es?" },
     {
       "answer": "PASIÓN",
       "hint": "Fuego que nos hace sentir más vivos el uno por el otro"
@@ -31,7 +31,7 @@
     ["BE", "SO"],
     ["TO", "MA", "DA"],
     ["FRANK"],
-    ["A", "BRA", "ZOS"],
+    ["ES", "POR", "A", "CÁ"],
     ["PA", "SIÓN"]
   ]
 }
