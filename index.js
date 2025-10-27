@@ -1057,10 +1057,19 @@ async function generateAndDownloadNoteCard({ answer, note, photo }) {
   const emoji = getEmojiForAnswer(answer);
   ctx.font = "700 26px Georgia, Times, serif";
   ctx.fillText(`${emoji ? emoji + ' ' : ''}${answer}`, textX, card.y + 38);
+  // Subtítulo: Primer aniversario + año + corazón (estilo diferenciado)
+  ctx.save();
+  ctx.font = "italic 700 18px 'Brush Script MT','Segoe Script','URW Chancery L', Georgia, serif";
+  ctx.fillStyle = "#e11d48";
+  ctx.shadowColor = "rgba(0,0,0,0.08)";
+  ctx.shadowBlur = 2;
+  ctx.fillText(`Primer aniversario ${getShareYear()} ❤`, textX, card.y + 60);
+  ctx.restore();
+  // Cuerpo
   ctx.font = "500 20px Georgia, Times, serif";
   // Wrap manual
   const words = String(note && note.trim() ? note : `¡Correcto: ${answer}!`).split(/\s+/);
-  let line = "", y = card.y + 70;
+  let line = "", y = card.y + 86;
   for (let i = 0; i < words.length; i++) {
     const t = line ? line + " " + words[i] : words[i];
     if (ctx.measureText(t).width > textW && line) {
@@ -1074,7 +1083,8 @@ async function generateAndDownloadNoteCard({ answer, note, photo }) {
   if (line) ctx.fillText(line, textX, y);
 
   // Fecha abajo a la derecha
-  const date = SHARE_CARD_COPY.footerText || formatLongDate(new Date());
+  // Fecha: solo día y mes (sin año)
+  const date = getShareDayMonth() || formatDayMonth(new Date());
   ctx.font = "500 16px Georgia, Times, serif";
   ctx.fillStyle = "#475569";
   const wdate = ctx.measureText(date).width;
@@ -1099,6 +1109,17 @@ function getShareYear() {
   const m = String(fixed).match(/(\d{4})/);
   if (m) return m[1];
   return String(new Date().getFullYear());
+}
+
+function getShareDayMonth() {
+  const fixed = SHARE_CARD_COPY?.footerText || ""; // ejemplo: "31 de octubre de 2025"
+  const m = String(fixed).match(/(\d{1,2})\s+de\s+([a-záéíóúñ]+)/i);
+  if (m) return `${m[1]} de ${m[2]}`;
+  return "";
+}
+function formatDayMonth(d) {
+  const months = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+  return `${d.getDate()} de ${months[d.getMonth()]}`;
 }
 
 /* =========================

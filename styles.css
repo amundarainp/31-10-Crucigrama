@@ -267,7 +267,7 @@ button:focus-visible {
   color: var(--accent);
   margin-left: 4px;
   display: inline-block;
-  animation: heartBeat 1.8s ease-in-out infinite;
+  animation: heartBeat 1.2s ease-in-out infinite;
   transform-origin: center;
 }
 @keyframes heartBeat {
