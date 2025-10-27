@@ -9,7 +9,10 @@
       content="Página romántica con crucigrama acróstico NOSOTROS, sílabas y foto fija."
     />
     <meta property="og:title" content="Crucigrama del amor 💖" />
-    <meta property="og:description" content="Un juego tierno para celebrar nuestro aniversario." />
+    <meta
+      property="og:description"
+      content="Un juego tierno para celebrar nuestro aniversario."
+    />
     <meta name="theme-color" content="#e11d48" />
     <link
       rel="icon"
@@ -20,8 +23,12 @@
   <body>
     <header class="container header">
       <h1>Crucigrama del amor</h1>
-      <p class="tagline">Un juego tierno para celebrar nuestro aniversario 💘</p>
-      <div style="margin-top: 10px; display: flex; gap: 10px; align-items: center">
+      <p class="tagline">
+        Un juego tierno para celebrar nuestro aniversario 💘
+      </p>
+      <div
+        style="margin-top: 10px; display: flex; gap: 10px; align-items: center"
+      >
         <button
           id="themeToggle"
           type="button"
@@ -40,7 +47,11 @@
         <h2 id="photoTitle" class="sr-only">Nuestra foto</h2>
         <div class="photo-card">
           <div class="photo-frame">
-            <img id="couplePhoto" alt="Nuestra foto juntos" src="./Subir/Juntos.jpeg" />
+            <img
+              id="couplePhoto"
+              alt="Nuestra foto juntos"
+              src="./Subir/Juntos.jpeg"
+            />
           </div>
           <p class="photo-legend">
             <span aria-hidden="true">❝</span>
@@ -53,8 +64,9 @@
       <section id="intro" aria-labelledby="intro-title">
         <h2 id="intro-title">Instructivo</h2>
         <p>
-          Completá las palabras y, cuando termines, tocá <strong>Verificar</strong>. Todo tiene que
-          ver con <em>nosotros</em>. Al final, el acróstico vertical dice <strong>NOSOTROS</strong>.
+          Completá las palabras y, cuando termines, tocá
+          <strong>Verificar</strong>. Todo tiene que ver con <em>nosotros</em>.
+          Al final, el acróstico vertical dice <strong>NOSOTROS</strong>.
         </p>
         <div id="status" class="status" aria-live="polite"></div>
       </section>
@@ -76,7 +88,9 @@
             </label>
           </div>
           <div id="syllGrid" class="syll-grid" role="list"></div>
-          <p class="syll-hint">Tip: clic en una sílaba la inserta desde la celda enfocada →</p>
+          <p class="syll-hint">
+            Tip: clic en una sílaba la inserta desde la celda enfocada →
+          </p>
           <div class="controls" role="group" aria-label="Acciones rápidas">
             <button id="checkBtn">Verificar</button>
             <button id="clearBtn" class="secondary">Borrar</button>
@@ -86,14 +100,21 @@
         <!-- Tablero -->
         <div>
           <div
-            style="display: flex; align-items: center; justify-content: space-between; gap: 16px"
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              gap: 16px;
+            "
           >
             <h2 id="gridTitle" style="margin: 0">Grilla del crucigrama</h2>
             <div class="grid-style" aria-label="Estilo de grilla">
               <label for="gridStyle">Estilo:</label>
               <select id="gridStyle">
                 <option value="contrast">Contraste alto</option>
-                <option value="clarin">Modo Claringrilla (oculta vacías)</option>
+                <option value="clarin">
+                  Modo Claringrilla (oculta vacías)
+                </option>
               </select>
             </div>
           </div>
@@ -101,7 +122,11 @@
             <div class="corner" aria-hidden="true"></div>
             <div id="colIndex" class="col-index" role="presentation"></div>
             <div id="rowIndex" class="row-index" role="presentation"></div>
-            <div id="crosswordGrid" role="grid" aria-labelledby="gridTitle"></div>
+            <div
+              id="crosswordGrid"
+              role="grid"
+              aria-labelledby="gridTitle"
+            ></div>
           </div>
         </div>
 
@@ -113,7 +138,7 @@
         </aside>
       </section>
 
-      <footer role="contentinfo">Hecho con ♥ en casa</footer>
+      <footer role="contentinfo">Hecho con ♥</footer>
     </main>
 
     <!-- Modal final (Share Card) -->
@@ -127,7 +152,8 @@
       <div class="modal">
         <h3 id="finalTitle">¡Felicidades, amor!</h3>
         <p id="finalMsg">
-          Completamos nuestro crucigrama del amor. Siempre <strong>NOSOTROS</strong> 💗
+          Completamos nuestro crucigrama del amor. Siempre
+          <strong>NOSOTROS</strong> 💗
         </p>
         <div class="share-card-wrap">
           <canvas
