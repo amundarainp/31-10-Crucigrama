@@ -1,27 +1,52 @@
 {
   "words": [
-    { "answer": "SONRISA", "hint": "Gesto que alegra mi alma." },
+    {
+      "answer": "SONRISA",
+      "hint": "Gesto que alegra mi alma.",
+      "note": "Esa sonrisa que me derrite",
+      "photo": "./Subir/Sonrisa.jpeg"
+    },
     {
       "answer": "AMOR",
-      "hint": "Sentimiento que nos une / La base de nuestra relación."
+      "hint": "Sentimiento que nos une / La base de nuestra relación.",
+      "note": "Siempre NOSOTROS",
+      "photo": "./Subir/Amor.jpeg"
     },
     {
       "answer": "SEÑOR",
-      "hint": "Primer fin de semana juntos, en Capilla del ......"
+      "hint": "Primer fin de semana juntos, en Capilla del ......",
+      "note": "Primera salidita de tantas",
+      "photo": "./Subir/Juntos.jpeg"
     },
     {
       "answer": "BESO",
-      "hint": "Voy a hacer algo distinto me dijiste, y me diste el primero"
+      "hint": "Voy a hacer algo distinto me dijiste, y me diste el primero",
+      "note": "Ese ‘algo distinto’ fue el beso que cambió todo.",
+      "photo": "./Subir/Beso.png"
     },
-    { "answer": "TOMADA", "hint": "La primer salida fue en Casa ......" },
     {
-      "answer": "FRANK",
-      "hint": "Nuestro varietal preferido es Cabernet ....."
+      "answer": "TOMADA",
+      "hint": "La primer salida fue en Casa ......",
+      "note": "En Casa Tomada empezó lo nuestro, único y hermoso.",
+      "photo": "./Subir/Casa.png"
     },
-    { "answer": "ES POR A CÁ", "hint": "Por dónde es?" },
+    {
+      "answer": "FRANC",
+      "hint": "Nuestro varietal preferido es Cabernet .....",
+      "note": "Brindis con Cabernet Frank y miradas que dicen todo",
+      "photo": "./Subir/Franc.png"
+    },
+    {
+      "answer": "ES POR A CÁ",
+      "hint": "Por dónde es?",
+      "note": "Con vos siempre es por acá: juntos a cualquier lado.",
+      "photo": "./Subir/2.png"
+    },
     {
       "answer": "PASIÓN",
-      "hint": "Fuego que nos hace sentir más vivos el uno por el otro"
+      "hint": "Fuego que nos hace sentir más vivos el uno por el otro",
+      "note": "Nuestra pasión: fuego dulce que siempre nos encuentra.",
+      "photo": "./Subir/Pasión.jpeg"
     }
   ],
   "syllables": [
@@ -30,7 +55,7 @@
     ["SE", "ÑOR"],
     ["BE", "SO"],
     ["TO", "MA", "DA"],
-    ["FRANK"],
+    ["FRANC"],
     ["ES", "POR", "A", "CÁ"],
     ["PA", "SIÓN"]
   ]

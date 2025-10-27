@@ -29,6 +29,7 @@ const LS_KEYS = {
   SIZE_MODE: "love-crossword.size",
   GRID_STYLE: "love-crossword.style",
   THEME: "ui.theme",
+  SHARE_URL: "love-crossword.shareUrl",
 };
 const SHARE_FILENAME = "nosotros.png";
 const SHARE_CANVAS_SELECTOR = "#shareCanvas";
@@ -38,6 +39,7 @@ const NAV_KEY_DELTAS = {
   ArrowLeft: [0, -1],
   ArrowRight: [0, 1],
 };
+const EMOJIS = ["🌐", "🥰", "⛪", "😘", "🏠", "🍷", "🧣", "🔥"];
 
 /* =========================
  * Sonidos: WebAudio (sin archivos)
@@ -104,6 +106,7 @@ let puzzleWords = [];
 let GRID_ROWS = 0,
   GRID_COLS = 0;
 let LETTER_MAP = new Map();
+const toastedWords = new Set();
 
 /* =========================
  * Utils
@@ -167,6 +170,8 @@ async function loadPistas() {
       .toUpperCase()
       .replace(/[^A-ZÁÉÍÓÚÜÑ]/g, ""),
     hint: w.hint || "",
+    note: w.note || "",
+    photo: w.photo || null,
   }));
   syllablesByWord = data.syllables;
 
@@ -212,6 +217,8 @@ function buildPuzzle(words) {
       col: startCol,
       answer: ans,
       hint: words[i].hint,
+      note: words[i].note,
+      photo: words[i].photo,
       keyIndex: safeKeyIndex,
     });
   }
@@ -246,6 +253,7 @@ function buildLetterMap(words) {
  * Render principal
  * ========================= */
 let $grid, $colIndex, $rowIndex, $acrossList, $status;
+let $progress, $progressBar, $progressLabel;
 
 function renderAll() {
   $grid = qs("#crosswordGrid");
@@ -253,12 +261,16 @@ function renderAll() {
   $rowIndex = qs("#rowIndex");
   $acrossList = qs("#acrossList");
   $status = qs("#status");
+  $progress = qs("#progress");
+  $progressBar = qs("#progress .bar");
+  $progressLabel = qs("#progress .label");
 
   renderGrid();
   renderClues();
   renderSyllables();
   initGridStyleSelector();
   initSizeToggle();
+  updateProgress();
 }
 
 function renderGrid() {
@@ -306,7 +318,7 @@ function renderGrid() {
         input.setAttribute("aria-label", `fila ${r}, columna ${c}`);
         input.addEventListener("input", onGridInput);
         input.addEventListener("keydown", onGridKeydown);
-        input.addEventListener("focus", () => Sound.click());
+        input.addEventListener("focus", onGridFocus);
         cell.appendChild(input);
       }
       if (c === acCol) cell.classList.add("acrostic");
@@ -318,13 +330,14 @@ function renderGrid() {
 }
 
 function renderClues() {
-  const emojis = ["🌐", "🥰", "⛪", "😘", "🏠", "🍷", "🧣", "🔥"];
   $acrossList.innerHTML = "";
   for (const w of puzzleWords) {
     const i = w.number - 1;
     const li = document.createElement("li");
     li.id = `clue-across-${w.number}`;
-    li.textContent = `${w.number}) ${emojis[i]} ${w.hint}`;
+    // Usamos el número automático del <ol>. Metemos el contenido en un span
+    // para que el background no tape el número (marker) cuando esté ok.
+    li.innerHTML = `<span class="chip">${EMOJIS[i] || ""} ${w.hint}</span>`;
     $acrossList.appendChild(li);
   }
 }
@@ -347,6 +360,8 @@ function renderSyllables() {
       btn.type = "button";
       btn.textContent = key;
       btn.dataset.syll = key;
+      btn.setAttribute("aria-pressed","false");
+      btn.title = "Insertar esta sílaba (clic = usar / clic de nuevo = desmarcar)";
       btn.addEventListener("click", () => {
         handleSyllableClick(btn, key);
         Sound.click();
@@ -371,7 +386,10 @@ function onGridInput(e) {
   const next = inputAt(r, c + 1);
   if (next) next.focus();
 
+  // Resalta la palabra activa y valida sin marcar celdas
+  highlightActiveRow(r);
   validateSingleWordAtRow(r, /*quiet*/ true);
+  updateProgress();
 }
 
 function onGridKeydown(e) {
@@ -381,17 +399,112 @@ function onGridKeydown(e) {
   const r = Number(input.dataset.row);
   const c = Number(input.dataset.col);
 
-  const nav = NAV_KEY_DELTAS[e.key];
+  // Atajo: Ctrl+Backspace limpia toda la palabra de la fila
+  if (e.key === "Backspace" && e.ctrlKey) {
+    e.preventDefault();
+    const w = puzzleWords.find((p) => p.row === r);
+    if (w) {
+      for (let j = 0; j < w.answer.length; j++) {
+        const t = inputAt(r, w.col + j);
+        if (t) t.value = "";
+      }
+      focusInputAt(r, c);
+      validateSingleWordAtRow(r, /*quiet*/ true);
+      highlightActiveRow(r);
+      updateProgress();
+    }
+    return;
+  }
 
+  // Atajo: Shift+Backspace limpia desde el inicio hasta la celda actual
+  if (e.key === "Backspace" && e.shiftKey) {
+    e.preventDefault();
+    const w = puzzleWords.find((p) => p.row === r);
+    if (w) {
+      const max = Math.max(0, c - w.col);
+      for (let j = 0; j <= max; j++) {
+        const t = inputAt(r, w.col + j);
+        if (t) t.value = "";
+      }
+      focusInputAt(r, c);
+      validateSingleWordAtRow(r, /*quiet*/ true);
+      highlightActiveRow(r);
+      updateProgress();
+    }
+    return;
+  }
+
+  // Atajo: Alt+Backspace limpia desde la celda actual hasta el final de la palabra
+  if (e.key === "Backspace" && e.altKey) {
+    e.preventDefault();
+    const w = puzzleWords.find((p) => p.row === r);
+    if (w) {
+      const from = Math.max(0, c - w.col);
+      for (let j = from; j < w.answer.length; j++) {
+        const t = inputAt(r, w.col + j);
+        if (t) t.value = "";
+      }
+      focusInputAt(r, c);
+      validateSingleWordAtRow(r, /*quiet*/ true);
+      highlightActiveRow(r);
+      updateProgress();
+    }
+    return;
+  }
+
+  // Borrar letra actual sin mover el cursor
+  if (e.key === "Backspace" || e.key === "Delete") {
+    e.preventDefault();
+    input.value = "";
+    validateSingleWordAtRow(r, /*quiet*/ true);
+    highlightActiveRow(r);
+    updateProgress();
+    return;
+  }
+
+  // Enter valida solo la palabra actual
+  if (e.key === "Enter") {
+    e.preventDefault();
+    validateSingleWordAtRow(r, /*quiet*/ false);
+    updateProgress();
+    return;
+  }
+
+  const nav = NAV_KEY_DELTAS[e.key];
   if (nav) {
     e.preventDefault();
-    focusInputAt(r + nav[0], c + nav[1]);
+    const nr = r + nav[0];
+    const nc = c + nav[1];
+    focusInputAt(nr, nc);
+    highlightActiveRow(nr);
+  }
+}
+
+function onGridFocus(e) {
+  Sound.click();
+  const input = e.target;
+  if (!(input instanceof HTMLInputElement)) return;
+  const r = Number(input.dataset.row);
+  highlightActiveRow(r);
+}
+
+function highlightActiveRow(row) {
+  // Quita resaltado anterior
+  qsa("#crosswordGrid .cell.active-word").forEach((el) =>
+    el.classList.remove("active-word")
+  );
+  const w = puzzleWords.find((p) => p.row === row);
+  if (!w) return;
+  for (let j = 0; j < w.answer.length; j++) {
+    const cell = cellAt(row, w.col + j);
+    cell?.classList.add("active-word");
   }
 }
 
 function handleSyllableClick(button, syll) {
   if (button.classList.contains("used")) {
     button.classList.remove("used");
+    button.setAttribute("aria-pressed","false");
     return;
   }
   const active = document.activeElement;
@@ -405,6 +518,8 @@ function handleSyllableClick(button, syll) {
   }
   Sound.type();
   validateSingleWordAtRow(r, /*quiet*/ true);
+  button.classList.add("used");
+  button.setAttribute("aria-pressed","true");
 }
 
 /* =========================
@@ -425,9 +540,10 @@ function validateSingleWordAtRow(row, quiet = false) {
   const w = puzzleWords.find((p) => p.row === row);
   if (!w) return false;
 
+  // Limpia marca de "palabra correcta" para recalcular
   for (let j = 0; j < w.answer.length; j++) {
     const cell = cellAt(row, w.col + j);
-    cell?.classList.remove("good", "bad", "empty-hint");
+    cell?.classList.remove("word-ok");
   }
 
   const expected = [...w.answer];
@@ -436,35 +552,37 @@ function validateSingleWordAtRow(row, quiet = false) {
 
   for (let j = 0; j < expected.length; j++) {
     const inp = inputAt(row, w.col + j);
-    const cell = inp?.parentElement;
     const val = (inp?.value || "").toUpperCase();
 
     if (!val) {
       anyEmpty = true;
-      cell?.classList.add("empty-hint");
       allGood = false;
       continue;
     }
 
     const ok = normalizeForCompare(val) === normalizeForCompare(expected[j]);
-    if (ok) {
-      cell?.classList.add("good");
-    } else {
-      cell?.classList.add("bad");
-      allGood = false;
-    }
+    if (!ok) allGood = false;
   }
 
   const clue = qs(`#clue-across-${w.number}`);
   if (allGood) {
     clue?.classList.add("ok");
-    flashRow(row);
     markSyllablesForCorrectWord(w.number - 1);
+    // Marca la palabra completa como correcta (suave, sin flash)
+    for (let j = 0; j < w.answer.length; j++) {
+      const cell = cellAt(row, w.col + j);
+      cell?.classList.add("word-ok");
+    }
+    // Toast de palabra correcta (una sola vez)
+    if (!toastedWords.has(w.number)) {
+      showWordToast(w);
+      toastedWords.add(w.number);
+    }
     if (!quiet) {
       $status.textContent = `¡Bien! La palabra ${w.number} está perfecta.`;
       $status.className = "status ok";
     }
-    Sound.success();
+    if (!quiet) Sound.success();
     const next = puzzleWords.find((p) => p.row > row && !wordFilled(p));
     if (next) focusFirstCellOfWord(next);
   } else {
@@ -481,17 +599,26 @@ function validateSingleWordAtRow(row, quiet = false) {
 
 function validateAll() {
   let allCorrect = true;
-  let remaining = 0;
+  let correct = 0;
+  let incorrect = 0;
+  let incomplete = 0;
 
   qsa("#crosswordGrid .cell").forEach((c) =>
-    c.classList.remove("good", "bad", "empty-hint")
+    c.classList.remove("good", "bad", "empty-hint", "word-ok", "active-word")
   );
 
   for (const w of puzzleWords) {
-    const ok = validateSingleWordAtRow(w.row, /*quiet*/ true);
-    if (!ok) {
+    if (!wordFilled(w)) {
       allCorrect = false;
-      if (wordFilled(w)) remaining++;
+      incomplete++;
+      continue;
+    }
+    const ok = validateSingleWordAtRow(w.row, /*quiet*/ true);
+    if (ok) {
+      correct++;
+    } else {
+      allCorrect = false;
+      incorrect++;
     }
   }
 
@@ -500,13 +627,15 @@ function validateAll() {
     $status.className = "status ok";
     showFinalModal();
     Sound.success();
-  } else {
-    $status.textContent =
-      remaining > 0
-        ? `Hay letras por revisar en ${remaining} palabra(s).`
-        : "Hay letras por completar. Probá de nuevo :)";
+  } else if (incorrect > 0) {
+    $status.textContent = `Hay letras por revisar en ${incorrect} palabra(s).`;
     $status.className = "status err";
+  } else {
+    // Solo faltan completar, no marcamos error
+    $status.textContent = `Verificadas: ${correct} correctas. Faltan ${incomplete} por completar.`;
+    $status.className = "status";
   }
+  updateProgress();
 }
 
 function markSyllablesForCorrectWord(wordIdx) {
@@ -581,6 +710,94 @@ function showFinalModal() {
 }
 function hideFinalModal() {
   qs("#finalModal")?.classList.remove("show");
+}
+function openQrModal() {
+  const c = qs("#qrContainer");
+  if (!c) return;
+  c.innerHTML = "";
+  const url = getShareUrl();
+  const inp = qs("#qrUrlInput");
+  if (inp) inp.value = url;
+  const img = document.createElement("img");
+  img.alt = "QR";
+  img.width = 240; img.height = 240;
+  img.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(url)}`;
+  c.appendChild(img);
+  const modal = qs("#qrModal");
+  modal?.classList.add("show");
+}
+function getShareUrl() {
+  // Usa URL guardada o la actual del navegador
+  const saved = storageGet(LS_KEYS.SHARE_URL, null);
+  return saved || window.location.href;
+}
+function downloadQrImage() {
+  const img = qs("#qrContainer img");
+  if (!img) return;
+  // Dibuja en canvas para poder descargar
+  const canvas = document.createElement("canvas");
+  canvas.width = img.naturalWidth || 240;
+  canvas.height = img.naturalHeight || 240;
+  const ctx = canvas.getContext("2d");
+  try {
+    ctx.drawImage(img, 0, 0);
+    downloadCanvasPng(canvas, "qr-crucigrama.png");
+  } catch {}
+}
+
+function showWordToast(w) {
+  const host = qs("#toastHost");
+  if (!host) return;
+  // Elimina toasts no fijados (queremos que desaparezca al completar la siguiente)
+  qsa(".toast", host).forEach((t) => {
+    if (!t.classList.contains("pinned")) t.remove();
+  });
+
+  const el = createToastElement({
+    answer: w.answer,
+    note: w.note,
+    photo: w.photo,
+  });
+  host.appendChild(el);
+}
+
+function createToastElement(data) {
+  const { answer, note, photo } = data;
+  const el = document.createElement("div");
+  el.className = "toast";
+  if (photo) {
+    const img = document.createElement("img");
+    img.src = photo;
+    img.alt = "";
+    el.appendChild(img);
+  }
+  const wrap = document.createElement("div");
+  const text = document.createElement("div");
+  text.className = "note";
+  text.textContent = note && String(note).trim() ? note : `¡Correcto: ${answer}!`;
+  wrap.appendChild(text);
+  const actions = document.createElement("div");
+  actions.className = "actions";
+  const saveBtn = document.createElement("button");
+  saveBtn.className = "secondary";
+  saveBtn.textContent = "Guardar";
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "secondary";
+  closeBtn.textContent = "×";
+  actions.appendChild(saveBtn);
+  actions.appendChild(closeBtn);
+  wrap.appendChild(actions);
+  el.appendChild(wrap);
+
+  // Eventos
+  closeBtn.addEventListener("click", () => el.remove());
+  saveBtn.addEventListener("click", async () => {
+    saveBtn.disabled = true;
+    await generateAndDownloadNoteCard({ answer, note, photo });
+    saveBtn.textContent = "Descargado";
+    setTimeout(() => el.remove(), 800);
+  });
+  return el;
 }
 
 let cachedShareImg = null;
@@ -765,6 +982,101 @@ function drawMultilineCentered(ctx, text, centerX, topY, maxW, lineH) {
   if (line) ctx.fillText(line, centerX, y);
 }
 
+async function generateAndDownloadNoteCard({ answer, note, photo }) {
+  const W = 700, H = 260;
+  const canvas = document.createElement("canvas");
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d");
+  // Fondo suave
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, "#fff7fb");
+  g.addColorStop(1, "#ffeef5");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  // Tarjeta
+  const pad = 16;
+  const card = { x: pad, y: pad, w: W - pad * 2, h: H - pad * 2, r: 16 };
+  ctx.fillStyle = "#ffffff";
+  roundRect(ctx, card.x, card.y, card.w, card.h, card.r);
+  ctx.fill();
+  ctx.strokeStyle = "#f8c8d6";
+  ctx.lineWidth = 2;
+  roundRect(ctx, card.x, card.y, card.w, card.h, card.r);
+  ctx.stroke();
+
+  // Foto opcional
+  const box = { x: card.x + 16, y: card.y + 16, d: 160 };
+  if (photo) {
+    await new Promise((res) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        ctx.save();
+        roundRect(ctx, box.x, box.y, box.d, box.d, 10);
+        ctx.clip();
+        const ar = img.width / img.height;
+        let sx = 0, sy = 0, sw = img.width, sh = img.height;
+        if (ar > 1) { sx = (img.width - img.height) / 2; sw = img.height; }
+        else { sy = (img.height - img.width) / 2; sh = img.width; }
+        ctx.drawImage(img, sx, sy, sw, sh, box.x, box.y, box.d, box.d);
+        ctx.restore();
+        ctx.strokeStyle = "#fbcfe8";
+        ctx.lineWidth = 3;
+        roundRect(ctx, box.x, box.y, box.d, box.d, 10);
+        ctx.stroke();
+        res();
+      };
+      img.onerror = () => res();
+      img.src = photo;
+    });
+  }
+
+  // Texto
+  const textX = photo ? box.x + box.d + 18 : card.x + 18;
+  const textW = photo ? card.x + card.w - textX - 18 : card.w - 36;
+  ctx.fillStyle = "#0f172a";
+  // Título con emoji de la palabra
+  const emoji = getEmojiForAnswer(answer);
+  ctx.font = "700 26px Georgia, Times, serif";
+  ctx.fillText(`${emoji ? emoji + ' ' : ''}${answer}`, textX, card.y + 38);
+  ctx.font = "500 20px Georgia, Times, serif";
+  // Wrap manual
+  const words = String(note && note.trim() ? note : `¡Correcto: ${answer}!`).split(/\s+/);
+  let line = "", y = card.y + 70;
+  for (let i = 0; i < words.length; i++) {
+    const t = line ? line + " " + words[i] : words[i];
+    if (ctx.measureText(t).width > textW && line) {
+      ctx.fillText(line, textX, y);
+      line = words[i];
+      y += 26;
+    } else {
+      line = t;
+    }
+  }
+  if (line) ctx.fillText(line, textX, y);
+
+  // Fecha abajo a la derecha
+  const date = formatLongDate(new Date());
+  ctx.font = "500 16px Georgia, Times, serif";
+  ctx.fillStyle = "#475569";
+  const wdate = ctx.measureText(date).width;
+  ctx.fillText(date, card.x + card.w - 18 - wdate, card.y + card.h - 14);
+
+  const fname = `recuerdo-${answer.replace(/[^A-Za-z0-9_-]+/g, "_")}.png`;
+  downloadCanvasPng(canvas, fname);
+}
+
+function getEmojiForAnswer(answer) {
+  const w = puzzleWords.find((p) => normalizeForCompare(p.answer) === normalizeForCompare(answer));
+  if (!w) return "";
+  return EMOJIS[(w.number - 1) % EMOJIS.length] || "";
+}
+function formatLongDate(d) {
+  const months = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+  return `${d.getDate()} de ${months[d.getMonth()]} de ${d.getFullYear()}`;
+}
+
 /* =========================
  * Init + Eventos
  * ========================= */
@@ -776,6 +1088,14 @@ function initStaticEvents() {
   qs("#clearBtn")?.addEventListener("click", () => {
     Sound.click();
     clearGrid();
+  });
+  qs("#revealBtn")?.addEventListener("click", () => {
+    Sound.click();
+    revealNextLetter();
+  });
+  qs("#qrBtn")?.addEventListener("click", () => {
+    Sound.click();
+    openQrModal();
   });
 
   const modal = qs("#finalModal");
@@ -809,6 +1129,24 @@ function initStaticEvents() {
     } else {
       downloadCanvasPng(canvas, SHARE_FILENAME);
     }
+  });
+
+  // QR Modal events
+  const qrModal = qs("#qrModal");
+  qs("#closeQr")?.addEventListener("click", () => qrModal?.classList.remove("show"));
+  qrModal?.addEventListener("click", (e) => { if (e.target === qrModal) qrModal.classList.remove("show"); });
+  qs("#copyUrl")?.addEventListener("click", async () => {
+    const url = getShareUrl();
+    try { await navigator.clipboard?.writeText(url); } catch {}
+  });
+  qs("#downloadQr")?.addEventListener("click", () => downloadQrImage());
+  qs("#setQrUrl")?.addEventListener("click", () => {
+    const inp = qs("#qrUrlInput");
+    if (!inp) return;
+    const value = String(inp.value || "").trim();
+    if (!value) return;
+    storageSet(LS_KEYS.SHARE_URL, value);
+    openQrModal();
   });
 
   // Theme toggle
@@ -846,6 +1184,80 @@ function initStaticEvents() {
       Sound.click();
     });
   })();
+
+  // Click en una pista: enfoca el inicio de esa palabra
+  const list = qs("#acrossList");
+  list?.addEventListener("click", (ev) => {
+    const li = ev.target.closest("li");
+    if (!li) return;
+    const num = Number(String(li.id).replace("clue-across-", ""));
+    const w = puzzleWords.find((p) => p.number === num);
+    if (w) {
+      focusFirstCellOfWord(w);
+      highlightActiveRow(w.row);
+      updateProgress();
+    }
+  });
+}
+
+/* =========================
+ * Progreso y ayudas
+ * ========================= */
+function getWordStatus(w) {
+  let anyEmpty = false;
+  let allGood = true;
+  for (let j = 0; j < w.answer.length; j++) {
+    const inp = inputAt(w.row, w.col + j);
+    const val = (inp?.value || "").toUpperCase();
+    if (!val) {
+      anyEmpty = true;
+      allGood = false;
+      continue;
+    }
+    if (normalizeForCompare(val) !== normalizeForCompare(w.answer[j])) {
+      allGood = false;
+    }
+  }
+  return { filled: !anyEmpty, correct: allGood && !anyEmpty };
+}
+
+function updateProgress() {
+  if (!$progress) return;
+  const total = puzzleWords.length || 0;
+  let filled = 0,
+    correct = 0;
+  for (const w of puzzleWords) {
+    const st = getWordStatus(w);
+    if (st.filled) filled++;
+    if (st.correct) correct++;
+  }
+  const pct = total ? Math.round((correct / total) * 100) : 0;
+  if ($progressBar) $progressBar.style.width = `${pct}%`;
+  if ($progressLabel)
+    $progressLabel.textContent = `Correctas ${correct}/${total} · Completas ${filled}/${total}`;
+}
+
+function revealNextLetter() {
+  // Usa la palabra de la fila del input activo; si no hay, toma la primera incompleta/incorrecta
+  const active = document.activeElement;
+  let row = null;
+  if (active && active.tagName === "INPUT") {
+    const [r] = active.dataset.pos.split(",").map(Number);
+    row = r;
+  }
+  let w = row ? puzzleWords.find((p) => p.row === row) : null;
+  if (!w) w = puzzleWords.find((p) => !getWordStatus(p).correct);
+  if (!w) return; // nada para revelar
+  for (let j = 0; j < w.answer.length; j++) {
+    const t = inputAt(w.row, w.col + j);
+    if (!t || t.value) continue;
+    t.value = w.answer[j].toUpperCase();
+    validateSingleWordAtRow(w.row, /*quiet*/ true);
+    highlightActiveRow(w.row);
+    t.focus();
+    updateProgress();
+    return;
+  }
 }
 
 function clearGrid() {
@@ -854,6 +1266,10 @@ function clearGrid() {
   $status.className = "status";
   qsa(".clues li").forEach((li) => li.classList.remove("ok"));
   qsa(".sy").forEach((b) => b.classList.remove("used", "correct"));
+  qsa("#crosswordGrid .cell").forEach((c) =>
+    c.classList.remove("word-ok", "active-word", "good", "bad", "empty-hint")
+  );
+  updateProgress();
 }
 
 /* Boot */

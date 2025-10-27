@@ -82,6 +82,7 @@
                 id="sizeToggle"
                 class="switch-input"
                 aria-label="Modo compacto"
+              aria-controls="crosswordGrid"
               />
               <span class="switch" aria-hidden="true"></span>
               <span class="label">Modo compacto</span>
@@ -94,6 +95,8 @@
           <div class="controls" role="group" aria-label="Acciones rápidas">
             <button id="checkBtn">Verificar</button>
             <button id="clearBtn" class="secondary">Borrar</button>
+            <button id="revealBtn" class="secondary" title="Revelar la próxima letra de la palabra activa">Revelar letra</button>
+            <button id="qrBtn" class="secondary" title="Mostrar código QR del sitio">QR del sitio</button>
           </div>
         </aside>
 
@@ -110,7 +113,7 @@
             <h2 id="gridTitle" style="margin: 0">Grilla del crucigrama</h2>
             <div class="grid-style" aria-label="Estilo de grilla">
               <label for="gridStyle">Estilo:</label>
-              <select id="gridStyle">
+              <select id="gridStyle" aria-controls="crosswordGrid">
                 <option value="contrast">Contraste alto</option>
                 <option value="clarin">
                   Modo Claringrilla (oculta vacías)
@@ -171,10 +174,37 @@
       </div>
     </div>
 
+    <!-- Modal QR -->
+    <div
+      id="qrModal"
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="qrTitle"
+    >
+      <div class="modal">
+        <h3 id="qrTitle">Abrí este juego desde tu celular</h3>
+        <p style="margin-bottom:10px">Escaneá el QR o compartí el link</p>
+        <div style="display:flex; gap:8px; justify-content:center; align-items:center; margin:6px 0 10px; flex-wrap:wrap">
+          <input id="qrUrlInput" type="url" inputmode="url" placeholder="https://tu-sitio.netlify.app" style="min-width:320px; max-width:72vw; padding:8px 10px; border-radius:8px; border:1px solid var(--border)" />
+          <button id="setQrUrl" class="secondary">Guardar URL</button>
+        </div>
+        <div id="qrContainer" style="display:grid;place-items:center;margin:10px 0 14px"></div>
+        <div class="controls" style="justify-content:center">
+          <button id="copyUrl" class="secondary">Copiar URL</button>
+          <button id="downloadQr" class="secondary">Descargar QR</button>
+          <button id="closeQr" class="secondary">Cerrar</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Sonidos -->
     <audio id="sndType" src="assets/snd-type.mp3" preload="auto"></audio>
     <audio id="sndClick" src="assets/snd-click.mp3" preload="auto"></audio>
     <audio id="sndSuccess" src="assets/snd-success.mp3" preload="auto"></audio>
+
+    <!-- Toasts -->
+    <div id="toastHost" class="toast-host" aria-live="polite" aria-atomic="true"></div>
 
     <script src="index.js" defer></script>
   </body>

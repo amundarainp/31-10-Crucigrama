@@ -107,6 +107,10 @@ section {
   padding: var(--space);
   box-shadow: var(--shadow);
 }
+/* Separación consistente entre secciones principales */
+.container > section {
+  margin-bottom: var(--space);
+}
 /* ==================== Photo ==================== */
 .photo-section {
   backdrop-filter: blur(var(--panel-blur));
@@ -216,6 +220,46 @@ button:focus-visible {
 .status.err {
   color: var(--error);
 }
+/* ==================== Progress ==================== */
+/* (Progreso removido del Instructivo; estilos no necesarios) */
+
+/* ==================== Toasts ==================== */
+.toast-host {
+  position: fixed;
+  bottom: 18px;
+  right: 18px;
+  display: grid;
+  gap: 10px;
+  z-index: 10000;
+}
+.toast {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: var(--shadow);
+  animation: slideUp var(--motion-med) var(--ease-out) both;
+  max-width: min(380px, 92vw);
+}
+.toast img {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.toast .note {
+  font-weight: 700;
+  line-height: 1.25;
+}
+.toast .actions { display: flex; gap: 8px; margin-top: 6px; }
+.toast .actions button { padding: 6px 10px; font-weight: 700; }
+/* No se fijan en pantalla; guardado descarga archivo */
 /* ==================== Crossword Board ==================== */
 .board {
   display: grid;
@@ -331,6 +375,17 @@ button:focus-visible {
 }
 #crosswordGrid .cell.empty-hint {
   outline: 2px dashed #fbbf24;
+}
+/* Resaltado sutil de palabra activa (mientras se completa) */
+#crosswordGrid .cell.active-word {
+  /* Usamos box-shadow inset para evitar cortes en bordes externos */
+  box-shadow: inset 0 0 0 2px var(--ring);
+  background: color-mix(in oklab, var(--ring) 18%, transparent);
+}
+/* Palabra correcta completa (persistente, elegante) */
+#crosswordGrid .cell.word-ok {
+  box-shadow: inset 0 0 0 2px var(--ok);
+  background: color-mix(in oklab, var(--ok) 20%, transparent);
 }
 /* ==================== Syllables ==================== */
 .syllables {
@@ -471,11 +526,26 @@ input[type="checkbox"].switch-input {
 }
 /* ==================== Clues ==================== */
 .clues ol {
-  padding-left: 1.2rem;
+  /* Que el número del <ol> quede pegado al contenido (emoji+pista) */
+  list-style-position: inside;
+  padding-left: 0;
+  margin-left: 0;
   margin: 0;
 }
 .clues li {
   margin: 0.4rem 0 0.6rem;
+  /* Hanging indent: líneas siguientes alinean con el inicio del texto */
+  text-indent: -1.6ch; /* ancho aproximado del marcador "1." */
+  padding-left: 1.6ch;
+}
+.clues li .chip {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 10px;
+}
+.clues li::marker {
+  font-weight: 800;
+  color: var(--accent);
 }
 .clues li.ok {
   color: var(--ok);
@@ -639,12 +709,10 @@ footer {
   border-color: #34d399;
 }
 
-/* Pista correcta -> chip verde */
-.clues li.ok {
+/* Pista correcta -> chip verde (solo al texto, no al número) */
+.clues li.ok .chip {
   background: color-mix(in oklab, #34d399 18%, transparent);
   border-left: 4px solid #34d399;
-  border-radius: 10px;
-  padding: 6px 10px;
 }
 
 /* Celdas incompletas de la palabra validada */
