@@ -33,9 +33,8 @@ const LS_KEYS = {
 };
 const SHARE_FILENAME = "nosotros.png";
 const SHARE_CANVAS_SELECTOR = "#shareCanvas";
-// URL por defecto para el QR/Share (poné tu URL de Netlify aquí)
-// Ej.: const DEFAULT_SHARE_URL = "https://tu-sitio.netlify.app";
-const DEFAULT_SHARE_URL = "";
+// URL por defecto para el QR/Share (URL pública de Netlify)
+const DEFAULT_SHARE_URL = "https://crucigrama-del-amor.netlify.app/";
 const NAV_KEY_DELTAS = {
   ArrowUp: [-1, 0],
   ArrowDown: [1, 0],
@@ -721,6 +720,11 @@ function openQrModal() {
   const url = getShareUrl();
   const inp = qs("#qrUrlInput");
   if (inp) inp.value = url;
+  const link = qs("#qrLink");
+  if (link) {
+    link.setAttribute("href", url);
+    link.textContent = url;
+  }
   if (window.QRCode && typeof window.QRCode === "function") {
     // Generación local
     const holder = document.createElement("div");
