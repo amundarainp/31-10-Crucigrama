@@ -33,6 +33,9 @@ const LS_KEYS = {
 };
 const SHARE_FILENAME = "nosotros.png";
 const SHARE_CANVAS_SELECTOR = "#shareCanvas";
+// URL por defecto para el QR/Share (poné tu URL de Netlify aquí)
+// Ej.: const DEFAULT_SHARE_URL = "https://tu-sitio.netlify.app";
+const DEFAULT_SHARE_URL = "";
 const NAV_KEY_DELTAS = {
   ArrowUp: [-1, 0],
   ArrowDown: [1, 0],
@@ -738,7 +741,7 @@ function openQrModal() {
 function getShareUrl() {
   // Usa URL guardada o la actual del navegador
   const saved = storageGet(LS_KEYS.SHARE_URL, null);
-  return saved || window.location.href;
+  return saved || DEFAULT_SHARE_URL || window.location.href;
 }
 function downloadQrImage() {
   const node = qs("#qrContainer canvas, #qrContainer img");
@@ -1057,13 +1060,14 @@ async function generateAndDownloadNoteCard({ answer, note, photo }) {
   const emoji = getEmojiForAnswer(answer);
   ctx.font = "700 26px Georgia, Times, serif";
   ctx.fillText(`${emoji ? emoji + ' ' : ''}${answer}`, textX, card.y + 38);
-  // Subtítulo: Primer aniversario + año + corazón (estilo diferenciado)
+  // Subtítulo: Primer aniversario + año + corazón (más legible y abajo, antes de la fecha)
   ctx.save();
-  ctx.font = "italic 700 18px 'Brush Script MT','Segoe Script','URW Chancery L', Georgia, serif";
-  ctx.fillStyle = "#e11d48";
-  ctx.shadowColor = "rgba(0,0,0,0.08)";
-  ctx.shadowBlur = 2;
-  ctx.fillText(`Primer aniversario ${getShareYear()} ❤`, textX, card.y + 60);
+  ctx.font = "700 16px Segoe UI, Roboto, Arial, sans-serif";
+  ctx.fillStyle = "#be123c"; // rojo más oscuro para mejor contraste
+  const subText = `Primer aniversario ${getShareYear()} ❤`;
+  const subY = card.y + card.h - 32; // bajamos un poco (más cerca de la fecha)
+  const subW = ctx.measureText(subText).width;
+  ctx.fillText(subText, card.x + card.w - 18 - subW, subY); // alineado a la derecha
   ctx.restore();
   // Cuerpo
   ctx.font = "500 20px Georgia, Times, serif";
@@ -1085,7 +1089,7 @@ async function generateAndDownloadNoteCard({ answer, note, photo }) {
   // Fecha abajo a la derecha
   // Fecha: solo día y mes (sin año)
   const date = getShareDayMonth() || formatDayMonth(new Date());
-  ctx.font = "500 16px Georgia, Times, serif";
+  ctx.font = "500 17px Georgia, Times, serif";
   ctx.fillStyle = "#475569";
   const wdate = ctx.measureText(date).width;
   ctx.fillText(date, card.x + card.w - 18 - wdate, card.y + card.h - 14);
@@ -1192,6 +1196,10 @@ function initStaticEvents() {
     if (!value) return;
     storageSet(LS_KEYS.SHARE_URL, value);
     openQrModal();
+  });
+  qs("#openUrl")?.addEventListener("click", () => {
+    const url = getShareUrl();
+    try { window.open(url, "_blank", "noopener"); } catch {}
   });
 
   // Theme toggle
@@ -1320,5 +1328,9 @@ function clearGrid() {
 /* Boot */
 document.addEventListener("DOMContentLoaded", async () => {
   initStaticEvents();
+  // Preconfigura la URL compartida si hay un valor por defecto definido
+  if (DEFAULT_SHARE_URL && !storageGet(LS_KEYS.SHARE_URL, null)) {
+    storageSet(LS_KEYS.SHARE_URL, DEFAULT_SHARE_URL);
+  }
   await loadPistas();
 });

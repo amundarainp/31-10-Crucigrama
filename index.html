@@ -224,8 +224,27 @@
         </div>
         <div
           id="qrContainer"
-          style="display: grid; place-items: center; margin: 10px 0 14px"
+          style="display: grid; place-items: center; margin: 10px 0 8px"
         ></div>
+        <div
+          id="qrLinkWrap"
+          style="display: flex; gap: 8px; justify-content: center; align-items: center; margin: 0 0 10px; flex-wrap: wrap"
+        >
+          <a
+            id="qrLink"
+            href="#"
+            target="_blank"
+            rel="noopener"
+            style="
+              color: var(--accent);
+              font-weight: 700;
+              text-decoration: underline;
+              max-width: 88%;
+              overflow-wrap: anywhere;
+            "
+          ></a>
+          <button id="openUrl" class="secondary">Abrir</button>
+        </div>
         <div class="controls" style="justify-content: center">
           <button id="copyUrl" class="secondary">Copiar URL</button>
           <button id="downloadQr" class="secondary">Descargar QR</button>
