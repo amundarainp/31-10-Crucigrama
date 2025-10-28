@@ -773,7 +773,7 @@ async function shareQrImage() {
   }
 }
 
-function showWordToast(w) {
+function showWordToast(w, opts = {}) {
   const host = qs("#toastHost");
   if (!host) return;
   // Elimina toasts no fijados (queremos que desaparezca al completar la siguiente)
@@ -785,19 +785,31 @@ function showWordToast(w) {
     answer: w.answer,
     note: w.note,
     photo: w.photo,
-  });
+  }, opts);
   host.appendChild(el);
+  // Si se pidió expandido, centra/overlay
+  updateToastHostCenter();
 }
 
-function createToastElement(data) {
+function createToastElement(data, opts = {}) {
   const { answer, note, photo } = data;
   const el = document.createElement("div");
   el.className = "toast";
+  if (opts.expand) el.classList.add(opts.big ? "expanded-lg" : "expanded");
+  // Cierre flotante
+  const closeX = document.createElement("button");
+  closeX.className = "close-x";
+  closeX.setAttribute("aria-label", "Cerrar");
+  closeX.textContent = "×";
+  el.appendChild(closeX);
   if (photo) {
+    const wrapImg = document.createElement("div");
+    wrapImg.className = "img-wrap";
     const img = document.createElement("img");
     img.src = photo;
     img.alt = "";
-    el.appendChild(img);
+    wrapImg.appendChild(img);
+    el.appendChild(wrapImg);
   }
   const wrap = document.createElement("div");
   const text = document.createElement("div");
@@ -812,7 +824,7 @@ function createToastElement(data) {
   actions.className = "actions";
   const expandBtn = document.createElement("button");
   expandBtn.className = "secondary";
-  expandBtn.textContent = "Ampliar";
+  expandBtn.textContent = el.classList.contains("expanded") || el.classList.contains("expanded-lg") ? "Reducir" : "Ampliar";
   const saveBtn = document.createElement("button");
   saveBtn.className = "secondary";
   saveBtn.textContent = "Guardar";
@@ -826,18 +838,22 @@ function createToastElement(data) {
   el.appendChild(wrap);
 
   // Eventos
-  closeBtn.addEventListener("click", () => { el.remove(); updateToastHostCenter(); });
-  expandBtn.addEventListener("click", () => {
-    const isExp = el.classList.toggle("expanded");
-    expandBtn.textContent = isExp ? "Reducir" : "Ampliar";
+  const doClose = () => { el.remove(); updateToastHostCenter(); };
+  closeBtn.addEventListener("click", doClose);
+  closeX.addEventListener("click", doClose);
+  function toggleExpand() {
+    if (el.classList.contains("expanded") || el.classList.contains("expanded-lg")) {
+      el.classList.remove("expanded", "expanded-lg");
+      expandBtn.textContent = "Ampliar";
+    } else {
+      el.classList.add("expanded");
+      expandBtn.textContent = "Reducir";
+    }
     updateToastHostCenter();
-  });
-  // Tocar la imagen también alterna el tamaño
-  el.querySelector("img")?.addEventListener("click", () => {
-    const isExp = el.classList.toggle("expanded");
-    expandBtn.textContent = isExp ? "Reducir" : "Ampliar";
-    updateToastHostCenter();
-  });
+  }
+  expandBtn.addEventListener("click", toggleExpand);
+  // Tocar la imagen (o su contenedor) alterna el tamaño
+  el.querySelector(".img-wrap")?.addEventListener("click", toggleExpand);
   saveBtn.addEventListener("click", async () => {
     saveBtn.disabled = true;
     await generateAndDownloadNoteCard({ answer, note, photo });
@@ -850,10 +866,19 @@ function createToastElement(data) {
 function updateToastHostCenter() {
   const host = qs("#toastHost");
   if (!host) return;
-  const anyExpanded = host.querySelector(".toast.expanded");
+  const anyExpanded = host.querySelector(".toast.expanded, .toast.expanded-lg");
   host.classList.toggle("centered", Boolean(anyExpanded));
   const overlay = qs("#toastOverlay");
   if (overlay) overlay.classList.toggle("show", Boolean(anyExpanded));
+}
+
+function ensureToastVisible() {
+  // Desplaza suavemente hacia el final de la página para asegurar visibilidad del toast
+  try {
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
+  } catch {
+    window.scrollTo(0, document.documentElement.scrollHeight);
+  }
 }
 
 let cachedShareImg = null;
@@ -1274,11 +1299,17 @@ function initStaticEvents() {
     if (!li) return;
     const num = Number(String(li.id).replace("clue-across-", ""));
     const w = puzzleWords.find((p) => p.number === num);
-    if (w) {
-      focusFirstCellOfWord(w);
-      highlightActiveRow(w.row);
-      updateProgress();
+    if (!w) return;
+    // Si la pista ya está correcta, abrimos el toast con nota/foto
+    if (li.classList.contains("ok")) {
+      showWordToast(w, { expand: true, big: true });
+      ensureToastVisible();
+      return;
     }
+    // Si no está correcta, navegar a la palabra
+    focusFirstCellOfWord(w);
+    highlightActiveRow(w.row);
+    updateProgress();
   });
 }
 

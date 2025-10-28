@@ -262,6 +262,7 @@ button:focus-visible {
   box-shadow: var(--shadow);
   animation: slideUp var(--motion-med) var(--ease-out) both;
   max-width: min(380px, 92vw);
+  position: relative;
 }
 .toast img {
   width: 56px;
@@ -269,6 +270,21 @@ button:focus-visible {
   object-fit: cover;
   border-radius: 8px;
   border: 1px solid var(--border);
+}
+.toast .img-wrap { cursor: pointer; display: grid; place-items: center; }
+.toast .img-wrap img { transition: transform var(--motion-med) var(--ease-out), box-shadow var(--motion-med) var(--ease-out), border-color var(--motion-med) var(--ease-out), border-width var(--motion-med) var(--ease-out); }
+.toast.expanded-lg .img-wrap img:hover {
+  transform: scale(1.03);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.18);
+}
+/* Borde sutil en modo expandido */
+.toast.expanded .img-wrap img,
+.toast.expanded-lg .img-wrap img {
+  border-width: 2px;
+  border-color: color-mix(in oklab, var(--accent) 70%, var(--border));
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast .img-wrap img { transition: none; }
 }
 .toast .note {
   font-weight: 700;
@@ -296,6 +312,23 @@ button:focus-visible {
 }
 .toast .actions { display: flex; gap: 8px; margin-top: 6px; }
 .toast .actions button { padding: 6px 10px; font-weight: 700; }
+/* Cierre flotante */
+.toast .close-x {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 900;
+  line-height: 1;
+  display: none; /* por defecto oculto */
+}
+.toast.expanded .close-x,
+.toast.expanded-lg .close-x { display: inline-block; }
 /* No se fijan en pantalla; guardado descarga archivo */
 
 /* ===== Toast expanded ===== */
@@ -312,6 +345,21 @@ button:focus-visible {
 .toast.expanded .note {
   font-size: 1.05em;
   line-height: 1.35;
+}
+/* Nivel un poco más grande */
+.toast.expanded-lg {
+  grid-template-columns: 1fr;
+  max-width: min(620px, 95vw);
+  padding: 16px 18px;
+}
+.toast.expanded-lg img {
+  width: 260px;
+  height: 260px;
+  justify-self: center;
+}
+.toast.expanded-lg .note {
+  font-size: 1.12em;
+  line-height: 1.4;
 }
 /* ==================== Crossword Board ==================== */
 .board {
@@ -768,6 +816,8 @@ footer {
   #crosswordGrid .cell input {
     font-size: calc(var(--cell) * 0.56);
   }
+  /* Área de toque más grande alrededor de la foto del toast */
+  .toast .img-wrap { padding: 10px; }
   /* Botones ocupan el ancho disponible en móvil */
   .controls {
     gap: 8px;
@@ -790,6 +840,14 @@ footer {
   /* Modal: margen con notch/safe-area */
   .modal {
     margin: 0 10px;
+  }
+  /* Botón de cierre flotante más grande en móvil */
+  .toast .close-x {
+    top: 8px;
+    right: 10px;
+    width: 34px;
+    height: 34px;
+    font-size: 18px;
   }
 }
 /* ===== Mejoras visuales rápidas ===== */
