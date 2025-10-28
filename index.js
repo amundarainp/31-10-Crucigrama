@@ -810,19 +810,34 @@ function createToastElement(data) {
   wrap.appendChild(meta);
   const actions = document.createElement("div");
   actions.className = "actions";
+  const expandBtn = document.createElement("button");
+  expandBtn.className = "secondary";
+  expandBtn.textContent = "Ampliar";
   const saveBtn = document.createElement("button");
   saveBtn.className = "secondary";
   saveBtn.textContent = "Guardar";
   const closeBtn = document.createElement("button");
   closeBtn.className = "secondary";
   closeBtn.textContent = "×";
+  actions.appendChild(expandBtn);
   actions.appendChild(saveBtn);
   actions.appendChild(closeBtn);
   wrap.appendChild(actions);
   el.appendChild(wrap);
 
   // Eventos
-  closeBtn.addEventListener("click", () => el.remove());
+  closeBtn.addEventListener("click", () => { el.remove(); updateToastHostCenter(); });
+  expandBtn.addEventListener("click", () => {
+    const isExp = el.classList.toggle("expanded");
+    expandBtn.textContent = isExp ? "Reducir" : "Ampliar";
+    updateToastHostCenter();
+  });
+  // Tocar la imagen también alterna el tamaño
+  el.querySelector("img")?.addEventListener("click", () => {
+    const isExp = el.classList.toggle("expanded");
+    expandBtn.textContent = isExp ? "Reducir" : "Ampliar";
+    updateToastHostCenter();
+  });
   saveBtn.addEventListener("click", async () => {
     saveBtn.disabled = true;
     await generateAndDownloadNoteCard({ answer, note, photo });
@@ -830,6 +845,15 @@ function createToastElement(data) {
     setTimeout(() => el.remove(), 800);
   });
   return el;
+}
+
+function updateToastHostCenter() {
+  const host = qs("#toastHost");
+  if (!host) return;
+  const anyExpanded = host.querySelector(".toast.expanded");
+  host.classList.toggle("centered", Boolean(anyExpanded));
+  const overlay = qs("#toastOverlay");
+  if (overlay) overlay.classList.toggle("show", Boolean(anyExpanded));
 }
 
 let cachedShareImg = null;

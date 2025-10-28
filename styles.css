@@ -232,6 +232,23 @@ button:focus-visible {
   gap: 10px;
   z-index: 10000;
 }
+.toast-host.centered {
+  left: 0;
+  right: 0;
+  justify-items: center;
+}
+/* Overlay sutil cuando un toast está expandido */
+#toastOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  pointer-events: none; /* no bloquea clics */
+  transition: opacity var(--motion-med) var(--ease-out);
+  z-index: 9999; /* debajo de los toasts (10000) */
+}
+#toastOverlay.show { opacity: 1; }
 .toast {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -280,6 +297,22 @@ button:focus-visible {
 .toast .actions { display: flex; gap: 8px; margin-top: 6px; }
 .toast .actions button { padding: 6px 10px; font-weight: 700; }
 /* No se fijan en pantalla; guardado descarga archivo */
+
+/* ===== Toast expanded ===== */
+.toast.expanded {
+  grid-template-columns: 1fr;
+  max-width: min(520px, 92vw);
+  padding: 14px 16px;
+}
+.toast.expanded img {
+  width: 200px;
+  height: 200px;
+  justify-self: center;
+}
+.toast.expanded .note {
+  font-size: 1.05em;
+  line-height: 1.35;
+}
 /* ==================== Crossword Board ==================== */
 .board {
   display: grid;
