@@ -752,6 +752,26 @@ function downloadQrImage() {
     downloadCanvasPng(canvas, "qr-crucigrama.png");
   } catch {}
 }
+async function shareQrImage() {
+  const url = getShareUrl();
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=512x512&data=${encodeURIComponent(url)}`;
+  try {
+    const res = await fetch(qrUrl, { cache: "no-store" });
+    const blob = await res.blob();
+    const file = new File([blob], "qr-crucigrama.png", { type: "image/png" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: "Crucigrama del amor", text: `Abrir: ${url}` });
+    } else {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "qr-crucigrama.png";
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+    }
+  } catch {
+    downloadQrImage();
+  }
+}
 
 function showWordToast(w) {
   const host = qs("#toastHost");
@@ -1179,6 +1199,10 @@ function initStaticEvents() {
   qs("#copyUrl")?.addEventListener("click", async () => {
     const url = getShareUrl();
     try { await navigator.clipboard?.writeText(url); } catch {}
+  });
+  qs("#shareQr")?.addEventListener("click", async () => {
+    Sound.click();
+    await shareQrImage();
   });
   qs("#downloadQr")?.addEventListener("click", () => downloadQrImage());
   // Removed editable URL; QR es fijo con la URL preconfigurada
