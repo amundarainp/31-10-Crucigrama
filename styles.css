@@ -725,6 +725,40 @@ footer {
     --cell: 28px;
   }
 }
+/* ===== Mobile refinements ===== */
+@media (max-width: 480px) {
+  /* Celdas y letras más grandes para tacto */
+  :root:not(.compact) {
+    --cell: 32px;
+    --fs-base: 16px;
+  }
+  #crosswordGrid .cell input {
+    font-size: calc(var(--cell) * 0.56);
+  }
+  /* Botones ocupan el ancho disponible en móvil */
+  .controls {
+    gap: 8px;
+  }
+  .controls button {
+    flex: 1 1 auto;
+    min-width: 44px;
+    padding: 12px 14px;
+  }
+  /* Toast centrado y con ancho seguro */
+  .toast-host {
+    left: 0;
+    right: 0;
+    bottom: max(10px, env(safe-area-inset-bottom));
+    justify-items: center;
+  }
+  .toast {
+    max-width: 92vw;
+  }
+  /* Modal: margen con notch/safe-area */
+  .modal {
+    margin: 0 10px;
+  }
+}
 /* ===== Mejoras visuales rápidas ===== */
 
 /* Glow sutil cuando la celda está correcta */

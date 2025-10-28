@@ -721,24 +721,12 @@ function openQrModal() {
   const inp = qs("#qrUrlInput");
   if (inp) inp.value = url;
   const link = qs("#qrLink");
-  if (link) {
-    link.setAttribute("href", url);
-    link.textContent = url;
-  }
-  if (window.QRCode && typeof window.QRCode === "function") {
-    // Generación local
-    const holder = document.createElement("div");
-    c.appendChild(holder);
-    // @ts-ignore
-    new window.QRCode(holder, { text: url, width: 240, height: 240 });
-  } else {
-    // Fallback externo
-    const img = document.createElement("img");
-    img.alt = "QR";
-    img.width = 240; img.height = 240;
-    img.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(url)}`;
-    c.appendChild(img);
-  }
+  // Mostrar QR fijo con la URL preconfigurada
+  const img = document.createElement("img");
+  img.alt = "QR";
+  img.width = 240; img.height = 240;
+  img.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(url)}`;
+  c.appendChild(img);
   const modal = qs("#qrModal");
   modal?.classList.add("show");
 }
@@ -1193,18 +1181,7 @@ function initStaticEvents() {
     try { await navigator.clipboard?.writeText(url); } catch {}
   });
   qs("#downloadQr")?.addEventListener("click", () => downloadQrImage());
-  qs("#setQrUrl")?.addEventListener("click", () => {
-    const inp = qs("#qrUrlInput");
-    if (!inp) return;
-    const value = String(inp.value || "").trim();
-    if (!value) return;
-    storageSet(LS_KEYS.SHARE_URL, value);
-    openQrModal();
-  });
-  qs("#openUrl")?.addEventListener("click", () => {
-    const url = getShareUrl();
-    try { window.open(url, "_blank", "noopener"); } catch {}
-  });
+  // Removed editable URL; QR es fijo con la URL preconfigurada
 
   // Theme toggle
   (function themeInit() {
